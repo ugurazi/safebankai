@@ -1,149 +1,185 @@
-# SafeBank AI Agent
+# 🏦 SafeBank AI Agent
 
-SafeBank AI Agent, bankacılık ve finansal kurumlar için geliştirilmiş,
-doğal dilde sorulan soruları **güvenli ve kontrollü SQL sorgularına** dönüştüren
-bir yapay zekâ ajanıdır.
+> Enterprise-Grade Natural Language to Secure SQL AI Agent for Banking
 
-Projenin temel amacı; SQL bilgisi olmayan iş birimleri ve üst yönetimin,
-banka verilerine **yetki bazlı, KVKK uyumlu ve hızlı** şekilde erişebilmesini sağlamaktır.
+![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![Flask](https://img.shields.io/badge/Flask-Backend-black)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-orange)
+![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
----
+SafeBank AI Agent is an enterprise-grade AI system designed for banking and financial institutions.  
+It securely converts natural language questions into controlled, validated, and compliant SQL queries.
 
-## Problem Tanımı
-
-Bankalarda raporlama süreçleri genellikle şu problemleri barındırır:
-
-- İş birimleri SQL bilmez ve veri ekiplerine bağımlıdır  
-- Basit raporlar bile saatler veya günler sürebilir  
-- Yetkisiz veri erişimi ve KVKK riski oluşabilir  
-- Manuel kontrol süreçleri operasyonel yük yaratır  
-
-SafeBank AI Agent, bu problemleri ortadan kaldırmak için
-doğal dil → güvenli SQL yaklaşımını benimser.
+The core objective is to enable non-technical business units and executives to access banking data in a secure, role-based, KVKK/GDPR-compliant, and efficient manner — without requiring SQL knowledge.
 
 ---
 
-## Çözüm Yaklaşımı
+## 🚨 Problem Statement
 
-Kullanıcı, bankacılık verileriyle ilgili sorusunu doğal dilde sorar.
-Sistem bu soruyu aşağıdaki adımlarla işler:
+In traditional banking environments:
 
-1. Soru analizi ve niyet çıkarımı  
-2. Veri sözlüğü (data dictionary) üzerinden tablo/kolon doğrulama  
-3. Yetki ve güvenlik kontrolleri  
-4. MySQL uyumlu SQL sorgusu üretimi  
-5. Sonuçların sade bir dille açıklanması  
+- Business teams do not know SQL and depend on data teams  
+- Even simple reports may take hours or days  
+- Unauthorized data exposure creates KVKK/GDPR risks  
+- Manual query validation increases operational overhead  
 
-Tüm süreç boyunca yalnızca tanımlı ve izinli alanlar kullanılır.
+This creates a reporting bottleneck that slows decision-making.
 
 ---
 
-## Sistem Akışı
+## 💡 Solution
 
-- Doğal dil girişi (Türkçe / İngilizce)
-- Niyet analizi (metric, zaman, filtre, segment)
-- Data Dictionary kontrolü
-- SQL üretimi
-- KVKK ve güvenlik kontrolleri
-- Sorgu çalıştırma
-- Sonuç ve açıklama üretimi
+SafeBank AI Agent introduces a Natural Language → Secure SQL architecture.
+
+Users ask their questions in natural language (Turkish or English).  
+The system processes them through a controlled multi-step pipeline:
+
+1. Intent Analysis (metric, time, segmentation, filters)
+2. Data Dictionary Validation (table & column verification)
+3. Security & Compliance Checks
+4. MySQL-Compatible SQL Generation
+5. Execution & Natural Language Explanation
+
+Only predefined and authorized fields from the Data Dictionary can be used.
 
 ---
 
-## Teknik Mimari
+## 🔄 System Workflow
+
+- Natural language input (TR / EN)
+- Intent & metric extraction
+- Data Dictionary validation
+- Secure SQL generation
+- KVKK & security guard layer
+- Query execution (MySQL)
+- Result explanation (human-readable)
+
+---
+
+## 🏗 Technical Architecture
 
 ### Backend
 - Python
 - Flask
-- Ollama (Local LLM)
+- Ollama (Local LLM – on-premise compatible)
 - Pandas
 
-### Veritabanı
+### Database
 - MySQL 8.0
 
-### Altyapı
+### Infrastructure
 - Docker
 - Docker Compose
 
-### Veri Yönetimi
-- CSV tabanlı Data Dictionary
-- Kolon ve tablo bazlı kontrol mekanizması
+### Data Governance
+- CSV-based Data Dictionary
+- Column-level validation & restriction
+- PII tagging mechanism
 
 ---
 
-## Proje Yapısı
+## 📁 Project Structure
+
 backend/
 │
 ├─ agent/
-│ ├─ planner.py # Niyet ve plan çıkarımı
-│ ├─ sql_writer.py # SQL üretimi
-│ ├─ guard.py # Güvenlik ve KVKK kontrolleri
-│ ├─ explainer.py # Sonuç açıklamaları
-│ ├─ plan_validator.py # Sorgu doğrulama
+│   ├─ planner.py
+│   ├─ sql_writer.py
+│   ├─ guard.py
+│   ├─ explainer.py
+│   ├─ plan_validator.py
 │
 ├─ catalog/
-│ ├─ loader.py # Data dictionary yükleme
-│ ├─ retriever.py # Kolon / tablo eşleştirme
+│   ├─ loader.py
+│   ├─ retriever.py
 │
 ├─ db/
-│ └─ mysql.py # MySQL bağlantı katmanı
+│   └─ mysql.py
 │
-├─ app.py # Flask uygulaması
+├─ app.py
 ├─ requirements.txt
 ├─ docker-compose.yml
-├─ seed.sql # Demo veri
-├─ data_dictionary.csv # Banka veri sözlüğü
+├─ seed.sql
+├─ data_dictionary.csv
 
 ---
 
-## Kurulum ve Çalıştırma
+## ⚙ Installation
 
-### Gereksinimler
+### Requirements
 - Docker
 - Docker Compose
 - Python 3.10+
-- Ollama (local ortamda)
+- Ollama (local environment)
 
-### MySQL Servisini Başlatma
+### Start MySQL Service
+
 docker-compose up -d
 
-Python Bağımlılıkları
+### Install Python Dependencies
+
 pip install -r requirements.txt
 
-Flask Uygulaması
+### Run Flask Application
+
 python app.py
 
+---
 
-Örnek Kullanım
-Soru:
-## 31.12.2025 tarihinde özel bankacılık müşteri sayısı şube bazında kaçtır?
-Sistem Çıktısı:
-- İlgili tablolar ve kolonlar doğrulanır
--Özel bankacılık filtresi uygulanır
--Snapshot tarihi dikkate alınır
--Şube bazında müşteri sayıları hesaplanır
--Sonuç, kullanıcıya tablo ve açıklama olarak sunulur.
--Güvenlik ve KVKK
--Yetkisiz tablo ve kolon erişimi engellenir
--Hassas alanlar otomatik olarak işaretlenir
--Sorgular limit ve filtre kontrollerinden geçer
--SQL injection riskine karşı koruma uygulanır
--Yalnızca data dictionary’de tanımlı alanlar kullanılabilir
- ## Kullanım Alanları:
--Banka üst yönetimi raporlama
--İş birimleri için self-service analiz
--Denetim ve iç kontrol ekipleri
--Hackathon ve POC çalışmaları
--Kurumsal AI Agent entegrasyonları
--Gelecek Çalışmalar
--Grafik ve görselleştirme desteği
--Rol bazlı yetkilendirme
--Sorgu ve prompt loglama
--PDF / Excel çıktı desteği
+## 🧪 Example Use Case
 
+Question:
 
+How many private banking customers were there per branch as of 31.12.2025?
 
-Geliştirici
-Uğur Emir Azı, Nisa Ataş
-Computer Engineering
-AI • FinTech • NLP • Data
+System Behavior:
+
+- Validates relevant tables & columns  
+- Applies private banking filter  
+- Applies snapshot date condition  
+- Groups by branch  
+- Generates secure SQL  
+- Returns table output with explanation  
+
+---
+
+## 🔐 Security & Compliance
+
+- Unauthorized tables and columns are blocked  
+- Sensitive fields (PII) are flagged  
+- Query limits and filter validation enforced  
+- SQL injection protection layer  
+- Only Data Dictionary–approved fields are usable  
+
+Designed with KVKK and GDPR compliance principles at its core.
+
+---
+
+## 🎯 Use Cases
+
+- Executive-level reporting  
+- Self-service analytics for business teams  
+- Internal audit & compliance units  
+- Hackathon / PoC demonstrations  
+- Enterprise AI Agent integrations  
+
+---
+
+## 🚀 Future Enhancements
+
+- Built-in visualization engine  
+- Role-based access control (RBAC)  
+- Prompt & query logging  
+- PDF / Excel export support  
+- Enterprise API gateway integration  
+
+---
+
+## 👨‍💻 Developers
+
+Uğur Emir Azı  
+Nisa Ataş  
+
+Computer Engineering  
+AI • FinTech • NLP • Data Systems
