@@ -116,30 +116,30 @@ python app.py
 
 Örnek Kullanım
 Soru:
-31.12.2025 tarihinde özel bankacılık müşteri sayısı şube bazında kaçtır?
+## 31.12.2025 tarihinde özel bankacılık müşteri sayısı şube bazında kaçtır?
 Sistem Çıktısı:
-İlgili tablolar ve kolonlar doğrulanır
-Özel bankacılık filtresi uygulanır
-Snapshot tarihi dikkate alınır
-Şube bazında müşteri sayıları hesaplanır
-Sonuç, kullanıcıya tablo ve açıklama olarak sunulur.
-Güvenlik ve KVKK
-Yetkisiz tablo ve kolon erişimi engellenir
-Hassas alanlar otomatik olarak işaretlenir
-Sorgular limit ve filtre kontrollerinden geçer
-SQL injection riskine karşı koruma uygulanır
-Yalnızca data dictionary’de tanımlı alanlar kullanılabilir
-Kullanım Alanları
-Banka üst yönetimi raporlama
-İş birimleri için self-service analiz
-Denetim ve iç kontrol ekipleri
-Hackathon ve POC çalışmaları
-Kurumsal AI Agent entegrasyonları
-Gelecek Çalışmalar
-Grafik ve görselleştirme desteği
-Rol bazlı yetkilendirme
-Sorgu ve prompt loglama
-PDF / Excel çıktı desteği
+- İlgili tablolar ve kolonlar doğrulanır
+-Özel bankacılık filtresi uygulanır
+-Snapshot tarihi dikkate alınır
+-Şube bazında müşteri sayıları hesaplanır
+-Sonuç, kullanıcıya tablo ve açıklama olarak sunulur.
+-Güvenlik ve KVKK
+-Yetkisiz tablo ve kolon erişimi engellenir
+-Hassas alanlar otomatik olarak işaretlenir
+-Sorgular limit ve filtre kontrollerinden geçer
+-SQL injection riskine karşı koruma uygulanır
+-Yalnızca data dictionary’de tanımlı alanlar kullanılabilir
+ ## Kullanım Alanları:
+-Banka üst yönetimi raporlama
+-İş birimleri için self-service analiz
+-Denetim ve iç kontrol ekipleri
+-Hackathon ve POC çalışmaları
+-Kurumsal AI Agent entegrasyonları
+-Gelecek Çalışmalar
+-Grafik ve görselleştirme desteği
+-Rol bazlı yetkilendirme
+-Sorgu ve prompt loglama
+-PDF / Excel çıktı desteği
 
 
 
