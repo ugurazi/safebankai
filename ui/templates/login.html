@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SafeBank Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="wrap">
+    <h1>SafeBank — Login</h1>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">
+          {% for m in messages %}
+            <div class="flash-item">{{ m }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="card">
+      <form method="post" action="{{ url_for('login_submit') }}" class="row" style="flex-direction:column; gap:10px; align-items:stretch;">
+        <input class="text" name="username" placeholder="Kullanıcı adı (stajyer / yonetmen)" autocomplete="off" />
+        <input class="text" type="password" name="password" placeholder="Şifre (123)" />
+        <button class="btn" type="submit">Giriş Yap</button>
+      </form>
+
+      <div class="muted" style="margin-top:10px;">
+        Demo: <b>stajyer / 123</b> · <b>yonetmen / 123</b>
+      </div>
+
+      <div class="muted" style="margin-top:6px;">
+        Backend: <code>{{ fastapi_base }}</code>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

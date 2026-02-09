@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SafeBank UI (Flask)</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="wrap">
+    <h1>SafeBank AI Agent — Flask UI</h1>
+
+    <div class="muted" style="margin-bottom:10px;">
+      Kullanıcı: <b>{{ session.get("username") }}</b> — Role: <b>{{ session.get("role") }}</b>
+      · <a href="{{ url_for('logout') }}">Çıkış</a>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">
+          {% for m in messages %}
+            <div class="flash-item">{{ m }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="card">
+      <h2>1) Data Dictionary CSV Yükle</h2>
+      <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data" class="row">
+        <input type="file" name="file" accept=".csv" required />
+        <button class="btn" type="submit">Upload</button>
+      </form>
+
+      <div class="muted">
+        Aktif catalog_id:
+        <span id="activeCatalogBadge" class="badge">{{ catalog_id if catalog_id else "Yok (önce CSV yükle)" }}</span>
+        <input type="hidden" id="catalog_id" value="{{ catalog_id if catalog_id else '' }}">
+      </div>
+
+      {% if session.get("role") == "director" %}
+      <div class="row" style="margin-top:10px;">
+        <button class="btn ghost" type="button" onclick="syncCatalogFromDB()">DB Şemasından Sync Et</button>
+        <span id="sync_status" class="muted"></span>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>2) Chat (Read-Only)</h2>
+      <div class="muted" style="margin-top:-6px; margin-bottom:10px;">
+        Not: Chat kanalı güvenlik nedeniyle <b>sadece SELECT</b> çalıştırır.
+      </div>
+
+      <form action="{{ url_for('send') }}" method="post" class="row">
+        <input
+          class="text"
+          type="text"
+          name="message"
+          placeholder="Örn: 31.12.2025'te özel bankacılık müşteri adedi şube kod bazında kaç?"
+          autocomplete="off"
+        />
+        <button class="btn" type="submit">Gönder</button>
+        <a class="btn ghost" href="{{ url_for('clear') }}">Temizle</a>
+      </form>
+
+      {% if session.get("last_user") %}
+        <div class="chat">
+          <div class="bubble user">
+            <div class="who">Sen</div>
+            <div class="msg">{{ session.get("last_user") }}</div>
+          </div>
+
+          <div class="bubble ai">
+            <div class="who">AI</div>
+            <pre class="msg">{{ session.get("last_ai") }}</pre>
+
+            {% if session.get("last_risk") %}
+              <div class="risk">Risk: {{ session.get("last_risk") }}</div>
+            {% endif %}
+
+            {% if session.get("last_sql") %}
+              <details class="sql">
+                <summary>SQL'i göster</summary>
+
+                <div class="sqlbar">
+                  <button class="btn ghost small" type="button" onclick="copySql()">Kopyala</button>
+                  <span id="copyHint" class="muted"></span>
+                </div>
+
+                <pre id="sqlText">{{ session.get("last_sql") }}</pre>
+              </details>
+
+              <script>
+                function copySql(){
+                  const el = document.getElementById("sqlText");
+                  const hint = document.getElementById("copyHint");
+                  if(!el) return;
+                  const t = el.innerText || el.textContent || "";
+                  navigator.clipboard.writeText(t);
+                  hint.textContent = "✅ Kopyalandı";
+                  setTimeout(()=> hint.textContent = "", 1200);
+                }
+              </script>
+            {% endif %}
+
+            {% if session.get("last_chart_json") %}
+            <div class="card" style="margin-top:12px;">
+                <div class="who">📈 Grafik</div>
+                <canvas id="chartCanvas" height="120"></canvas>
+            </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                const chartData = JSON.parse('{{ session.get("last_chart_json") | safe }}');
+                const labels = chartData.labels || [];
+                const series = (chartData.series && chartData.series[0]) ? chartData.series[0] : null;
+
+                if(series){
+                  const ctx = document.getElementById('chartCanvas').getContext('2d');
+                  new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                      labels: labels,
+                      datasets: [{
+                        label: series.name || 'value',
+                        data: series.data || []
+                      }]
+                    },
+                    options: {
+                      responsive: true,
+                      plugins: { legend: { display: true } }
+                    }
+                  });
+                }
+            </script>
+            {% endif %}
+
+            {% if session.get("last_rows") %}
+              {% set rows = session.get("last_rows") %}
+              <div class="result-table">
+                <div class="row" style="justify-content: space-between; align-items:center; margin:12px 0;">
+                  <div class="who">📊 Sorgu Sonucu</div>
+                  <a class="btn ghost small" href="{{ url_for('download_xlsx') }}">Excel indir (.xlsx)</a>
+                </div>
+
+                <div class="muted" style="margin-bottom:8px;">
+                  Toplam kayıt: <b>{{ rows|length }}</b>
+                </div>
+
+                {% if rows|length == 0 %}
+                  <div class="muted">Kayıt bulunamadı.</div>
+                {% else %}
+                  {% set columns = rows[0].keys() %}
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          {% for c in columns %}
+                            <th>{{ c.replace('_', ' ') }}</th>
+                          {% endfor %}
+                          <th>İşlem</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for r in rows %}
+                          <tr>
+                            {% for c in columns %}
+                              <td>{{ r[c] }}</td>
+                            {% endfor %}
+
+                            <td>
+                              {% if 'MUST_NO' in r and r['MUST_NO'] %}
+                                <button class="btn ghost small" type="button"
+                                  data-mustno="{{ r['MUST_NO'] }}"
+                                  onclick="openMailModal(this)">
+                                  Mail Gönder
+                                </button>
+                              {% else %}
+                                <span class="muted">-</span>
+                              {% endif %}
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="muted" style="margin-top:6px;">Not: Maksimum 1000 kayıt gösterilir.</div>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="muted">Henüz mesaj yok.</div>
+      {% endif %}
+    </section>
+
+    {% if session.get("role") == "director" %}
+    <section class="card">
+      <h2>3) Director — NLP Execute (WRITE)</h2>
+
+      <div class="muted" style="margin-top:-6px; margin-bottom:10px;">
+        Buraya <b>doğal dil</b> yazarsın. Sistem ALTER/UPDATE üretip çalıştırır.
+        (Bu çağrı artık CORS’suz: Browser → Flask → FastAPI)
+      </div>
+
+      <div class="row" style="align-items:flex-start;">
+        <textarea
+          class="text"
+          id="director_nlp"
+          rows="3"
+          placeholder="Örn: MUST_TUM tablosuna MUSTERI_SEGMENT kolonu ekle ve ISKOLU_KOD'u X olanlara PRIVATE ata"
+        ></textarea>
+
+        <button class="btn" type="button" onclick="runDirectorNLP()">Çalıştır</button>
+      </div>
+
+      <div id="director_status" class="muted" style="margin-top:10px;"></div>
+
+      <details class="sql" style="margin-top:10px;">
+        <summary>Son çalıştırılan NLP sonucu (SQL + sonuç)</summary>
+        <pre id="director_result_pre"></pre>
+      </details>
+    </section>
+    {% endif %}
+
+    <footer class="muted">
+      Backend FastAPI: <code id="fastapiBase">{{ fastapi_base }}</code>
+    </footer>
+  </div>
+
+  <!-- ✅ MAIL MODAL (DEMO ONLY) -->
+  <div id="mailModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mailModalTitle">
+      <div class="modal-header">
+        <div id="mailModalTitle" class="modal-title">📧 Mail Gönder (Demo)</div>
+        <button class="btn ghost small" type="button" onclick="closeMailModal()">Kapat</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="muted" style="margin-top:0;">
+          Seçilen MUST_NO: <b id="modalMustNo">-</b>
+        </div>
+
+        <textarea
+          class="text"
+          id="mailMessage"
+          rows="5"
+          placeholder="Mail içeriğini yaz..."
+          style="margin-top:10px;"
+        ></textarea>
+
+        <div id="mailStatus" class="muted" style="margin-top:8px;"></div>
+
+        <div class="modal-actions">
+          <button class="btn ghost" type="button" onclick="closeMailModal()">Vazgeç</button>
+          <button class="btn" type="button" onclick="sendDemoMail()">Gönder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // Director
+    // =========================
+    async function runDirectorNLP(){
+      const statusEl = document.getElementById("director_status");
+      const outEl = document.getElementById("director_result_pre");
+      const msgEl = document.getElementById("director_nlp");
+      const catalogIdEl = document.getElementById("catalog_id");
+      const badgeEl = document.getElementById("activeCatalogBadge");
+
+      const message = (msgEl?.value || "").trim();
+      const catalog_id = (catalogIdEl?.value || "").trim();
+
+      if(!message){
+        alert("NLP mesajı boş olamaz.");
+        return;
+      }
+
+      statusEl.textContent = "⏳ Çalıştırılıyor...";
+      outEl.textContent = "";
+
+      try{
+        const res = await fetch("/director/nlp_execute", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            message: message,
+            catalog_id: catalog_id || null,
+            dry_run: false
+          })
+        });
+
+        const data = await res.json();
+
+        if(!res.ok){
+          statusEl.textContent = "❌ Hata";
+          outEl.textContent = (data.detail ? String(data.detail) : JSON.stringify(data, null, 2));
+          return;
+        }
+
+        if(data.catalog_id){
+          catalogIdEl.value = data.catalog_id;
+          badgeEl.textContent = data.catalog_id;
+        }
+
+        statusEl.textContent = "✅ Başarılı";
+        outEl.textContent =
+          "Yeni catalog_id: " + (data.catalog_id || "") + "\n\n" +
+          "Statements:\n" + (data.statements ? data.statements.join("\n") : "") + "\n\n" +
+          "Results:\n" + (data.results ? JSON.stringify(data.results, null, 2) : "");
+      }catch(e){
+        statusEl.textContent = "❌ İstek atılamadı";
+        outEl.textContent = String(e);
+      }
+    }
+
+    async function syncCatalogFromDB(){
+      const statusEl = document.getElementById("sync_status");
+      const catalogIdEl = document.getElementById("catalog_id");
+      const badgeEl = document.getElementById("activeCatalogBadge");
+
+      statusEl.textContent = " ⏳ Sync ediliyor...";
+      try{
+        const res = await fetch("/director/sync_catalog", { method: "POST" });
+        const data = await res.json();
+
+        if(!res.ok){
+          statusEl.textContent = " ❌ Hata";
+          alert(data.detail ? data.detail : JSON.stringify(data));
+          return;
+        }
+
+        if(data.catalog_id){
+          catalogIdEl.value = data.catalog_id;
+          badgeEl.textContent = data.catalog_id;
+        }
+        statusEl.textContent = " ✅ Sync OK";
+      }catch(e){
+        statusEl.textContent = " ❌ İstek atılamadı";
+        alert(String(e));
+      }
+    }
+
+    // =========================
+    // ✅ DEMO MAIL UI (MODAL)
+    // =========================
+    let currentMustNo = null;
+
+    function openMailModal(btnEl){
+      const mustNo = btnEl?.dataset?.mustno || null;
+      currentMustNo = mustNo;
+
+      document.getElementById("modalMustNo").innerText = mustNo || "-";
+      document.getElementById("mailMessage").value = "";
+      document.getElementById("mailStatus").innerText = "";
+
+      const overlay = document.getElementById("mailModal");
+      overlay.classList.add("is-open");
+      overlay.setAttribute("aria-hidden", "false");
+
+      // focus textarea
+      setTimeout(() => {
+        const ta = document.getElementById("mailMessage");
+        if(ta) ta.focus();
+      }, 10);
+    }
+
+    function closeMailModal(){
+      const overlay = document.getElementById("mailModal");
+      overlay.classList.remove("is-open");
+      overlay.setAttribute("aria-hidden", "true");
+      currentMustNo = null;
+    }
+
+    async function sendDemoMail(){
+      const msg = (document.getElementById("mailMessage").value || "").trim();
+      const status = document.getElementById("mailStatus");
+
+      if(!currentMustNo){
+        status.innerText = "MUST_NO bulunamadı.";
+        return;
+      }
+      if(!msg){
+        status.innerText = "Mesaj boş olamaz.";
+        return;
+      }
+
+      status.innerText = "⏳ Gönderiliyor...";
+
+      try{
+        const res = await fetch("/demo/send_mail", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ must_no: currentMustNo, message: msg })
+        });
+
+        const data = await res.json();
+
+        if(!res.ok){
+          status.innerText = "❌ Hata: " + (data.detail || JSON.stringify(data));
+          return;
+        }
+
+        status.innerText = "✅ Mail gönderildi (demo).";
+        setTimeout(closeMailModal, 700);
+      }catch(e){
+        status.innerText = "❌ İstek hatası: " + String(e);
+      }
+    }
+
+    // overlay dışına tıklayınca kapat
+    document.addEventListener("click", (e) => {
+      const overlay = document.getElementById("mailModal");
+      if(!overlay) return;
+      if(overlay.classList.contains("is-open") && e.target === overlay){
+        closeMailModal();
+      }
+    });
+
+    // ESC ile kapat
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Escape"){
+        const overlay = document.getElementById("mailModal");
+        if(overlay && overlay.classList.contains("is-open")){
+          closeMailModal();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+table_name,column_name,data_type,description,pii,synonyms,is_primary_key,is_foreign_key,references_table,references_column,semantic_role,recommended_aggregation,is_snapshot_table,snapshot_date_column,data_classification,example_values
+"MUST_TUM,MUST_NO,INT,Müşteri benzersiz numarası,0,müşteri no|musteri no|customer id,1,0,,,,,1,snapshot_date,INTERNAL,""1001"""
+"MUST_TUM,MUST_TC,VARCHAR(11),Müşteri TCKN,1,tckn|tc|kimlik|identity,0,0,,,,,1,snapshot_date,PII,""11111111111"""
+"MUST_TUM,ISKOLU_KOD,VARCHAR(5),Müşteri segment kodu (Özel bankacılık vs),0,segment|müşteri tipi|private|özel bankacılık,0,0,,,,,1,snapshot_date,INTERNAL,""X"""
+"MUST_TUM,SUBE_KOD,VARCHAR(10),Müşterinin bağlı olduğu şube kodu,0,şube|sube|branch,0,1,SUBE_DIM,SUBE_KOD,branch_key,,1,snapshot_date,INTERNAL,""2222"""
+"MUST_TUM,IL_KOD,VARCHAR(5),Müşterinin kayıtlı olduğu il kodu,0,il|şehir|city|province,0,1,IL_DIM,IL_KOD,geo_key,,1,snapshot_date,INTERNAL,""06"""
+"MUST_TUM,snapshot_date,DATE,Sistemin snapshot tarihi (örn 2025-12-31),0,tarih|date|snapshot|31.12,0,0,,,,,1,snapshot_date,INTERNAL,""2025-12-31"""
+
+"SUBE_DIM,SUBE_KOD,VARCHAR(10),Şube kodu,0,şube kodu|branch code,1,0,,,,,0,,INTERNAL,""2222"""
+"SUBE_DIM,SUBE_AD,VARCHAR(255),Şube adı,0,şube adı|branch name,0,0,,,,,0,,INTERNAL,""Çankaya Şube"""
+"SUBE_DIM,SUBE_GRUP_KOD,VARCHAR(10),Şube grup kodu,0,şube grup|branch group,0,0,,,,,0,,INTERNAL,""G1"""
+"SUBE_DIM,IL_KOD,VARCHAR(5),Şubenin bulunduğu il kodu,0,il|şehir|city,0,1,IL_DIM,IL_KOD,geo_key,,0,,INTERNAL,""06"""
+
+"IL_DIM,IL_KOD,VARCHAR(5),İl kodu,0,il kodu|city code,1,0,,,,,0,,INTERNAL,""06"""
+"IL_DIM,IL_AD,VARCHAR(100),İl adı,0,il adı|şehir adı|city name,0,0,,,,,0,,INTERNAL,""Ankara"""
